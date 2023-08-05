@@ -10,3 +10,7 @@ keys = SimpleNamespace(
 keyboards = SimpleNamespace(
     main=create_keyboard(keys.random_connect, keys.settings)
 )
+
+states = SimpleNamespace(
+    main='MAIN',
+)
