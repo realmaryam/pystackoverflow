@@ -1,12 +1,13 @@
 import telebot
 import os
 from loguru import logger
-from src.utils.io import write_json
+from src.utils.io import write_json, read_file
 from src.constants import keyboards, keys, states
 import emoji
 from src.bot import bot
 from filters import IsAdmin
 from src.db import db
+from src.data import DATA_DIR
 
 
 class Bot:
@@ -36,14 +37,29 @@ class Bot:
                 reply_markup=keyboards.main
             )
 
-        @self.bot.message_handler(text=[keys.settings])
+            self.db.update_one(
+                {'chat.id': message.chat.id},
+                {'$set': message.json},
+                upsert=True
+            )
+
+        @self.bot.message_handler(text=[keys.ask_question])
+        def ask_question(message):
+            self.update_state(message.chat.id, states.ask_question)
+            self.send_message(
+                message.chat.id,
+                read_file(DATA_DIR / 'guide.html'),
+                
+            )
+
+        @self.bot.message_handler(text=[keys.cancel])
         def exit(message):
             pass
 
         @self.bot.message_handler(func=lambda _: True)
         def echo(message):
             self.send_message(
-                message.cgat.id, message.text,
+                message.chat.id, message.text,
                 reply_markup=keyboards.main
             )
         
