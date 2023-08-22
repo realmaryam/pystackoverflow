@@ -34,6 +34,10 @@ class Bot:
         self.bot.infinity_polling()
 
     def handlers(self):
+        @self.bot.middleware_handler(update_types=['message'])
+        def get_user(bot_instance, message):
+            self.user = User(chat_id=message.chat_id, mongodb=self.db, bot=self.bot)
+        
         @self.bot.message_handler(commands=['start'])
         def start(message):
             self.send_message(
@@ -47,7 +51,7 @@ class Bot:
                 {'$set': message.json},
                 upsert=True
             )
-            self.update_state(message.chat.id, states.main)
+            self.user.update_state(message.chat.id, states.main)
 
         @self.bot.message_handler(text=[keys.ask_question])
         def ask_question(message):
@@ -61,20 +65,17 @@ class Bot:
 
         @self.bot.message_handler(text=[keys.cancel])
         def cancel(message):
-            user = User(chat_id=message.chat.id)
-            user.reset()
-            self.update_state(message.chat.id, states.main)
+            self.user.reset()
+            self.user.update_state(states.main)
 
-            self.send_message(
-                message.chat.id,
-                'cancelled!',
+            self.user.send_message(':cross_mark: cancelled!',
                 reply_markup=keyboards.main
             )
 
         @self.bot.message_handler(func=lambda _: True)
         def echo(message):
             # print("i am in echo")
-            user = User(chat_id=message.chat.id)
+            user = User(message.chat.id, self.db, self.bot)
             if user.state == states.ask_question:
                 self.db.users.update_one(
                     {'chat.id': message.chat.id},
@@ -84,7 +85,7 @@ class Bot:
 
                 self.send_message(
                     message.chat.id, 
-                    user.current_question(),
+                    self.user.current_question(),
                 )
         
     def send_message(self, chat_id, text, reply_markup=None):

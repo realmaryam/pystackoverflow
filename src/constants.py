@@ -13,7 +13,7 @@ keys = SimpleNamespace(
 
 keyboards = SimpleNamespace(
     main=create_keyboard(keys.ask_question, keys.settings),
-    ask_question=create_keyboard(keys.cencel, keys.send_question)
+    ask_question=create_keyboard(keys.cancel, keys.send_question)
 )
 
 states = SimpleNamespace(

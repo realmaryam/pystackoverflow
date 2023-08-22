@@ -1,22 +1,45 @@
 from src.db import db
+from src.constants import keys
+import emoji
 
 class User:
-    def __init__(self, chat_id):
+    def __init__(self, chat_id, mongodb, bot):
         self.chat_id = chat_id
-        self.db = db
-        self.user = self.db.users.find_one({'chat.id': self.chat_id})
-        self.state = self.user.get('state')
+        self.db = mongodb
+        self.bot = bot
+
+    @property
+    def user(self):
+        return self.db.find_one({'chat.id': self.chat_id})
     
+    @property
+    def state(self):
+        return self.db.users.get('state')
+
+    @property
     def current_question(self):
         """
-        get the current question
+        get the current question message
         """
-        if not self.user or not self.user.get("current_question"):
+        user = self.user
+        if not user or not user.get("current_question"):
             return ' '
         
-        current_question = '\n\n'.join(self.user['current_question'])
-        return f':right_arrow: Preview Question\n\n {current_question}'
+        current_question = ':pencil: Question Preview\n\n'
+        current_question += '\n'.join(user['current_question'])
+        current_question += f'\n {"_" * 40}\n When done, click {keys.send_question}.'
+        return current_question
     
+    def send_message(self, text, reply_markup=None, emojize=True):
+        """
+        send message to the user
+        """
+        #TODO: fix duplicate send_message in run.py and here
+        if emojize:
+            text = emoji.emojize(text)
+        self.bot.send_message(self.chat_id, text, reply_markup=reply_markup)
+
+
     def update_state(self, state):
         """
         update user state
